@@ -1,0 +1,18 @@
+CHIP HalfAdder {
+    IN a, b;
+    OUT sum, carry;
+
+    PARTS:
+    Xor(a=a, b=b, out=sum);
+    And(a=a, b=b, out=carry);
+}
+
+CHIP FullAdder {
+    IN a, b, c;
+    OUT sum, carry;
+
+    PARTS:
+    HalfAdder(a=a, b=b, sum=absum, carry=abcarry);
+    HalfAdder(a=absum, b=c, sum=sum, carry=ccarry);
+    Or(a=abcarry, b=ccarry, out=carry);
+}

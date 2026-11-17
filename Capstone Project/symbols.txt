@@ -1,0 +1,12 @@
+// Labels and Variables (K = 72, K mod 3 = 0)
+MAIN_LOOP: 0
+KEY_PRESSED: 8
+DRAW_BOX: 10
+ROW_LOOP: 18
+COL_LOOP: 30
+NEXT_ROW: 45
+color: 16
+rowAddr: 17
+rowsLeft: 18
+currWord: 19
+colsLeft: 20

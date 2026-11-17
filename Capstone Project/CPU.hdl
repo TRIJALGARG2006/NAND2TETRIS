@@ -1,0 +1,46 @@
+CHIP CPU {
+    IN  inM[16], instruction[16], reset;
+    OUT outM[16], writeM, addressM[15], pc[15];
+
+    PARTS:
+    // Instruction decoding: instruction[15] == 0 is A-instruction, 1 is C-instruction
+    Not(in=instruction[15], out=isA);
+    
+    // Load A-Register if A-instruction OR (C-instruction and d1 bit is set)
+    Mux16(a=instruction, b=aluOut, sel=instruction[15], out=inA);
+    Or(a=isA, b=instruction[5], out=loadA);
+    ARegister(in=inA, load=loadA, out=outA, out[0..14]=addressM);
+
+    // Select A or M for ALU y-input based on 'a' bit (instruction[12])
+    And(a=instruction[15], b=instruction[12], out=selAM);
+    Mux16(a=outA, b=inM, sel=selAM, out=aluY);
+
+    // Load D-Register if C-instruction and d2 bit (instruction[4]) is set
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    DRegister(in=aluOut, load=loadD, out=aluX);
+
+    // ALU Computation (c1..c6 = instruction[6..11])
+    ALU(x=aluX, y=aluY,
+        zx=instruction[11], nx=instruction[10],
+        zy=instruction[9],  ny=instruction[8],
+        f=instruction[7],   no=instruction[6],
+        out=aluOut, out=outM, zr=zr, ng=ng);
+
+    // writeM if C-instruction and d3 bit (instruction[3]) is set
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // Jump logic: evaluate positive flag (pos = !zr && !ng)
+    Or(a=zr, b=ng, out=zrOrNg);
+    Not(in=zrOrNg, out=pos);
+
+    And(a=instruction[0], b=pos, out=jgt); // j3: out > 0
+    And(a=instruction[1], b=zr,  out=jeq); // j2: out == 0
+    And(a=instruction[2], b=ng,  out=jlt); // j1: out < 0
+
+    Or(a=jgt, b=jeq, out=jge);
+    Or(a=jge, b=jlt, out=jumpCond);
+    And(a=instruction[15], b=jumpCond, out=pcload);
+
+    // Program Counter
+    PC(in=outA, load=pcload, inc=true, reset=reset, out[0..14]=pc);
+}
